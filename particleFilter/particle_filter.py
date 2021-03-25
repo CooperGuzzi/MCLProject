@@ -67,7 +67,8 @@ class Particle:
     Performs noisy driving, based on the noise parameters b_l and sigma_l,
     stopping short if it runs into a wall.
     '''
-    realDist=#TODO: Set this equal to the actual distance to be moved by the particle
+    #TODO: real dist
+    realDist=(b_l*linearDist)+normpdf(linearDist,0,sigma_l)
     toWall=self.__room.trueObservation(self.__x,self.__y,self.__yaw)
     if toWall<realDist:
       realDist=toWall-1e-5
@@ -78,7 +79,8 @@ class Particle:
     '''
     Performs noisy driving, based on the noise parameters b_r and sigma_r.
     '''
-    realAngle=#TODO: Set this equal to the actual angle turned by the particle
+    #TODO: Set this equal to the actual angle turned by the particle
+    realAngle=(b_r*angle)*normpdf(angle,0,sigma_r)
     self.__yaw+=realAngle
     self.__yaw=robot.fixAngle(self.__yaw)
 
@@ -96,9 +98,12 @@ def move(rob,room,particles):
   if TorD=='T' or TorD=='t':
     angle=float(input(" Angle? "))
     #TODO
+    rob.turn(rob,angle)
+    
   elif TorD=='D' or TorD=='d':
     distance=float(input(' Distance? '))
     #TODO
+    rob.drive(rob,distance)
   elif TorD=='Q' or TorD=='q':
     exit()
 
