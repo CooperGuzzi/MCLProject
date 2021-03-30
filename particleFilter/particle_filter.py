@@ -68,7 +68,7 @@ class Particle:
     stopping short if it runs into a wall.
     '''
     #TODO: real dist
-    realDist=(b_l*linearDist)+normpdf(linearDist,0,sigma_l)
+    realDist=(b_l*linearDist)+np.random.normal(scale=sigma_l)
     toWall=self.__room.trueObservation(self.__x,self.__y,self.__yaw)
     if toWall<realDist:
       realDist=toWall-1e-5
@@ -80,7 +80,7 @@ class Particle:
     Performs noisy driving, based on the noise parameters b_r and sigma_r.
     '''
     #TODO: Set this equal to the actual angle turned by the particle
-    realAngle=(b_r*angle)*normpdf(angle,0,sigma_r)
+    realAngle=(b_r*angle)+np.random.normal(scale=sigma_r)
     self.__yaw+=realAngle
     self.__yaw=robot.fixAngle(self.__yaw)
 
@@ -113,6 +113,9 @@ def observe(rob,room,particles):
   Return the list of new particles.
   '''
   #TODO
+  weightsum=0
+  for each p in particles:
+    
 
 def main():
   N=10000
