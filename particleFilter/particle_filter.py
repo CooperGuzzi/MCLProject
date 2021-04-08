@@ -15,12 +15,13 @@ def normpdf(d,mu,sigma):
 class Particle:
   '''
   Represents one particle.  Can do things particles do.
+  *** Cooper Added Weight ***
   '''
   def __init__(self,room,
       x=None,y=None,yaw=None,
       c_o=1,sigma_o=.5,
       b_l=1,sigma_l=.2,
-      b_r=1,sigma_r=.1):
+      b_r=1,sigma_r=.1, weight=0):
     '''
     Must be given a pointer to the room object.  If x, y, and yaw are not
     given, the particle is placed randomly within the room.  Linear-Gaussian
@@ -52,6 +53,8 @@ class Particle:
     self.sigma_l=sigma_l
     self.b_r=b_r
     self.sigma_r=sigma_r
+    # added following line
+    self.weight=0
 
   
   def obs(self):
@@ -68,7 +71,7 @@ class Particle:
     stopping short if it runs into a wall.
     '''
     #TODO: real dist
-    realDist=(b_l*linearDist)+np.random.normal(scale=sigma_l)
+    realDist=(self.b_l*linearDist)+np.random.normal(scale=self.sigma_l)
     toWall=self.__room.trueObservation(self.__x,self.__y,self.__yaw)
     if toWall<realDist:
       realDist=toWall-1e-5
@@ -80,7 +83,7 @@ class Particle:
     Performs noisy driving, based on the noise parameters b_r and sigma_r.
     '''
     #TODO: Set this equal to the actual angle turned by the particle
-    realAngle=(b_r*angle)+np.random.normal(scale=sigma_r)
+    realAngle=(self.b_r*angle)+np.random.normal(scale=self.sigma_r)
     self.__yaw+=realAngle
     self.__yaw=robot.fixAngle(self.__yaw)
 
@@ -98,12 +101,20 @@ def move(rob,room,particles):
   if TorD=='T' or TorD=='t':
     angle=float(input(" Angle? "))
     #TODO
+    # Turn robot
     rob.turn(rob,angle)
+    # Turn particles in filter
+    for p in particles:
+      p.turn(angle)
     
   elif TorD=='D' or TorD=='d':
     distance=float(input(' Distance? '))
     #TODO
+    # Drive robot
     rob.drive(rob,distance)
+    # Drive particles in filter
+    for p in particles:
+      p.drive(distance)
   elif TorD=='Q' or TorD=='q':
     exit()
 
@@ -113,9 +124,32 @@ def observe(rob,room,particles):
   Return the list of new particles.
   '''
   #TODO
+  # Take observation
+  obs = rob.obs()
   weightsum=0
-  for each p in particles:
-    
+  for p in particles:
+    p.weight = np.log(1)
+    for o in obs:
+      op = p.obs()
+      addend = normpdf(o-(p.c_o*op), 0, p.sigma_o)
+      if addend == 0:
+        addend = 0.00000000000001
+      p.weight += np.log(addend)
+      weightsum += p.weight
+  for p in particles:
+    p.weight = np.exp(p.weight)
+  # Resampling
+  newParticles = range(len(particles))
+  for i in range(len(particles)):
+    r = weightsum*np.random.random()
+    samplesum = 0
+    for p in particles:
+      samplesum += p.weight
+      if r <= samplesum:
+        newParticles[i].x = p.x
+        newParticles[i].y = p.y
+        break
+  return newParticles
 
 def main():
   N=10000
