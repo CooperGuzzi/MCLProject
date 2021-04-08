@@ -97,12 +97,12 @@ def move(rob,room,particles):
   '''
   Should move the robot and particles for the particle filter.
   '''
-  TorD=input("(T)urn, (D)rive, or (Q)uit? ")
+  TorD=raw_input("(T)urn, (D)rive, or (Q)uit? ")
   if TorD=='T' or TorD=='t':
     angle=float(input(" Angle? "))
     #TODO
     # Turn robot
-    rob.turn(rob,angle)
+    rob.turn(angle)
     # Turn particles in filter
     for p in particles:
       p.turn(angle)
@@ -111,7 +111,7 @@ def move(rob,room,particles):
     distance=float(input(' Distance? '))
     #TODO
     # Drive robot
-    rob.drive(rob,distance)
+    rob.drive(distance)
     # Drive particles in filter
     for p in particles:
       p.drive(distance)
@@ -126,18 +126,30 @@ def observe(rob,room,particles):
   #TODO
   # Take observation
   obs = rob.obs()
+  obs1 = obs[0]
+  obs2 = obs[1]
+  obs3 = obs[2]
   weightsum=0
   for p in particles:
     p.weight = np.log(1)
-    for o in obs:
-      op = p.obs()
+    for x in range(3):
+      opAll = p.obs()
+      if x == 0:
+        op = opAll[0]
+        o = obs1
+      if x == 1:
+        op = opAll[1]
+        o = obs2
+      if x == 2:
+        op = opAll[2]
+        o = obs3
       addend = normpdf(o-(p.c_o*op), 0, p.sigma_o)
       if addend == 0:
         addend = 0.00000000000001
       p.weight += np.log(addend)
-      weightsum += p.weight
   for p in particles:
     p.weight = np.exp(p.weight)
+    weightsum += p.weight
   # Resampling
   newParticles = range(len(particles))
   for i in range(len(particles)):
@@ -146,8 +158,11 @@ def observe(rob,room,particles):
     for p in particles:
       samplesum += p.weight
       if r <= samplesum:
-        newParticles[i].x = p.x
-        newParticles[i].y = p.y
+        pos = p.pose()
+        x = pos[0]
+        y = pos[1]
+        yaw = pos[2]
+        newParticles[i] = Particle(room, x, y, yaw, p.sigma_o, p.sigma_l, p.sigma_r, p.weight)
         break
   return newParticles
 
